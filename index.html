@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matthew Lubin's Resume</title>
+    <!-- tailwind css cdn for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- firebase sdks -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // global variables provided by the canvas environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+
+        // initialize firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        let userId = null; // will store the authenticated user id
+
+        // function to save settings to firestore
+        async function saveSettings() {
+            if (!userId) {
+                console.warn("user not authenticated, cannot save settings.");
+                return;
+            }
+            try {
+                const settingsRef = doc(db, `artifacts/${appId}/users/${userId}/settings/timeAndTheme`);
+                await setDoc(settingsRef, {
+                    useDDMMYYYY: window.useDDMMYYYY,
+                    useMilitaryTime: window.useMilitaryTime,
+                    isDarkMode: window.isDarkMode // save dark mode state
+                });
+                console.log("settings saved successfully!");
+            } catch (e) {
+                console.error("error saving settings:", e);
+            }
+        }
+
+        // function to load settings from firestore
+        async function loadSettings() {
+            if (!userId) {
+                console.warn("user not authenticated, cannot load settings.");
+                return;
+            }
+            try {
+                const settingsRef = doc(db, `artifacts/${appId}/users/${userId}/settings/timeAndTheme`);
+                const docSnap = await getDoc(settingsRef);
+
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    window.useDDMMYYYY = data.useDDMMYYYY || false;
+                    window.useMilitaryTime = data.useMilitaryTime || false;
+                    window.isDarkMode = data.isDarkMode || false; // load dark mode state
+                    console.log("settings loaded successfully:", data);
+                } else {
+                    console.log("no saved settings found, using default.");
+                    window.useDDMMYYYY = false;
+                    window.useMilitaryTime = false;
+                    window.isDarkMode = false;
+                }
+                // apply loaded settings to ui
+                document.getElementById('format-ddmmyyyy').classList.toggle('active', window.useDDMMYYYY);
+                document.getElementById('format-military').classList.toggle('active', window.useMilitaryTime);
+                document.getElementById('toggle-dark-mode').classList.toggle('active', window.isDarkMode); // update dark mode button
+                document.body.classList.toggle('dark-mode', window.isDarkMode); // apply dark mode class to body
+                window.updateDateTime(); // update the display
+            } catch (e) {
+                console.error("error loading settings:", e);
+            }
+        }
+
+        // authenticate user and then load settings
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                userId = user.uid;
+                console.log("authenticated with uid:", userId);
+                await loadSettings();
+            } else {
+                console.log("no user signed in, attempting anonymous sign-in or custom token.");
+                if (typeof __initial_auth_token !== 'undefined') {
+                    try {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } catch (error) {
+                        console.error("error signing in with custom token:", error);
+                        await signInAnonymously(auth); // fallback to anonymous
+                    }
+                } else {
+                    await signInAnonymously(auth);
+                }
+            }
+        });
+
+        // expose functions to the global scope so inline script can access them
+        window.saveSettings = saveSettings;
+        window.loadSettings = loadSettings;
+        window.useDDMMYYYY = false; // initialize global state
+        window.useMilitaryTime = false; // initialize global state
+        window.isDarkMode = false; // initialize dark mode state
+    </script>
+    <style>
+        /* base styles for light mode */
+        body {
+            font-family: "Courier New", Courier, monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0; /* light background */
+            color: #000000; /* dark text */
+            position: relative;
+        }
+
+        /* dark mode styles */
+        body.dark-mode {
+            background-color: #1a1a1a; /* dark background */
+            color: #f0f0f0; /* light text */
+        }
+
+        /* specific element color overrides for dark mode if needed */
+        body.dark-mode .top-left-line1,
+        body.dark-mode .top-left-line2,
+        body.dark-mode .top-right-text,
+        body.dark-mode .settings-button,
+        body.dark-mode .settings-panel,
+        body.dark-mode .settings-option,
+        body.dark-mode .contact-info-button, /* added for contact info button */
+        body.dark-mode .contact-info-panel { /* added for contact info panel */
+            color: #f0f0f0; /* ensure text is light in dark mode */
+        }
+
+        body.dark-mode .settings-option:hover {
+            background-color: #333333; /* darker hover for dark mode options */
+        }
+
+        body.dark-mode .settings-option.active {
+            background-color: #444444; /* darker active for dark mode options */
+        }
+
+
+        .main-resume-img {
+            max-width: 90%;
+            max-height: 90vh;
+            width: auto;
+            height: auto;
+            cursor: pointer;
+        }
+        /* style for the anchor tag wrapping the image to prevent selection */
+        .resume-link {
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            display: block; /* ensure it behaves like a block element for centering */
+        }
+
+        .top-left-line1 {
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            font-size: 1rem;
+            font-family: "Courier New", Courier, monospace;
+            white-space: nowrap;
+        }
+        .top-left-line2 {
+            position: absolute;
+            top: 2.5rem;
+            left: 1rem;
+            font-size: 1rem;
+            font-family: "Courier New", Courier, monospace;
+        }
+        .top-right-text {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            font-size: 1rem;
+            text-align: right;
+        }
+        .copy-message {
+            color: green;
+            font-size: 0.8rem;
+            opacity: 0; /* still start hidden */
+            transition: none; /* remove transition for instant appearance */
+        }
+        .copy-message.show {
+            opacity: 1; /* instantly visible */
+        }
+
+        /* styles for the toggleable settings section (bottom right) */
+        .settings-container {
+            position: absolute;
+            bottom: 1rem;
+            right: 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 10;
+            transition: none;
+        }
+
+        .settings-button {
+            background-color: transparent;
+            padding: 0;
+            border-radius: 0;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-family: "Courier New", Courier, monospace;
+            box-shadow: none;
+            transition: none;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+        .settings-button:hover {
+            color: #333333;
+        }
+        .settings-panel {
+            background-color: transparent;
+            border-radius: 0;
+            padding: 0;
+            margin-top: 0.5rem;
+            box-shadow: none;
+            display: none;
+            flex-direction: column;
+            gap: 0.5rem;
+            font-family: "Courier New", Courier, monospace;
+            font-size: 0.9rem;
+            transition: none;
+            align-items: center;
+        }
+        .settings-panel.show {
+            display: flex;
+        }
+        .settings-option {
+            cursor: pointer;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            transition: none;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+        .settings-option:hover {
+            background-color: #e0e0e0;
+        }
+        .settings-option.active {
+            background-color: #d0d0d0;
+            font-weight: bold;
+        }
+
+        /* styles for the new toggleable contact information section (bottom left) */
+        .contact-info-container {
+            position: absolute;
+            bottom: 1rem;
+            left: 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start; /* aligned to the left */
+            z-index: 10;
+            transition: none;
+        }
+        .contact-info-button {
+            background-color: transparent;
+            color: #000000;
+            padding: 0;
+            border-radius: 0;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-family: "Courier New", Courier, monospace;
+            box-shadow: none;
+            transition: none;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+        .contact-info-button:hover {
+            color: #333333;
+        }
+        .contact-info-panel {
+            background-color: transparent;
+            border-radius: 0;
+            padding: 0;
+            margin-top: 0.5rem;
+            box-shadow: none;
+            display: none; /* hidden by default */
+            flex-direction: column;
+            gap: 0.5rem;
+            font-family: "Courier New", Courier, monospace;
+            font-size: 0.9rem;
+            color: #000000;
+            text-align: left; /* aligned text within the panel to the left */
+            align-items: flex-start; /* aligned panel content to the left */
+        }
+        .contact-info-panel.show {
+            display: flex; /* show when 'show' class is added */
+        }
+        .contact-info-text { /* new class for email and phone to prevent selection */
+            cursor: pointer;
+            user-select: none; /* prevent text selection/highlight */
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <!-- top-left name only -->
+    <div class="top-left-line1">
+        MATTHEW
+    </div>
+    <div class="top-left-line2">
+        LUBIN
+    </div>
+    <!-- date / time / timezone text for the top right corner -->
+    <div id="datetime-nyc" class="top-right-text">
+        <!-- date and time will be updated by javascript -->
+    </div>
+
+    <!-- main resume image wrapped in an anchor tag for download -->
+    <a href="/file/Matthew%20Lubin%2025.pdf" download="Matthew_Lubin_Resume.pdf" target="_blank" class="resume-link">
+        <img
+            src="file/Matthew%20Lubin%202025-1.png"
+            alt="Matthew Lubin's Resume"
+            class="main-resume-img"
+            onerror="this.onerror=null;this.src='https://placehold.co/800x1100/A0B9C6/FFFFFF?text=Image+Load+Error';"
+        >
+    </a>
+
+    <!-- contact information section (bottom left) -->
+    <div class="contact-info-container">
+        <button id="toggle-contact-info" class="contact-info-button">contact</button>
+        <div id="contact-info-panel" class="contact-info-panel">
+            <!-- the "copied!" message for email will be dynamically inserted here -->
+            <span id="contact-email-text" class="contact-info-text">matt.lubin@outlook.com</span>
+            <!-- the "copied!" message for phone will be dynamically inserted here -->
+            <span id="contact-phone-text" class="contact-info-text">(662) 771-1411</span>
+        </div>
+    </div>
+
+    <!-- toggleable settings section (bottom right) -->
+    <div id="settings-container" class="settings-container">
+        <button id="toggle-settings" class="settings-button">settings</button>
+        <div id="settings-panel" class="settings-panel">
+            <div id="format-ddmmyyyy" class="settings-option">dd/mm/yyyy</div>
+            <div id="format-military" class="settings-option">24 hour clock</div>
+            <div id="toggle-dark-mode" class="settings-option">dark mode</div>
+        </div>
+    </div>
+
+    <script type="module">
+        // import firebase functions from the head script
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // global variables provided by the canvas environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+
+        // initialize firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        let userId = null; // will store the authenticated user id
+
+        // state variables for date/time formatting and dark mode (now global for persistence)
+        window.useDDMMYYYY = false;
+        window.useMilitaryTime = false;
+        window.isDarkMode = false;
+
+        // function to update the date and time
+        window.updateDateTime = function() {
+            const now = new Date();
+
+            // format the date
+            let formattedDate;
+            const month = (now.getMonth() + 1).toString().padStart(2, '0');
+            const day = now.getDate().toString().padStart(2, '0');
+            const year = now.getFullYear();
+
+            if (window.useDDMMYYYY) {
+                formattedDate = `${day}/${month}/${year}`;
+            } else {
+                formattedDate = `${month}/${day}/${year}`;
+            }
+
+            // format the time
+            let formattedTime;
+            let hours = now.getHours();
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+
+            if (window.useMilitaryTime) {
+                formattedTime = `${hours.toString().padStart(2, '0')}:${minutes}`;
+            } else {
+                const ampm = hours >= 12 ? 'pm' : 'am';
+                hours = hours % 12;
+                hours = hours ? hours : 12; // the hour '0' should be '12'
+                formattedTime = `${hours}:${minutes}${ampm}`;
+            }
+
+            // dynamically determine timezone abbreviation (est or edt) for new york
+            let timezoneAbbreviation = '';
+            try {
+                const options = { timeZone: 'America/New_York', timeZoneName: 'short' };
+                const formatter = new Intl.DateTimeFormat('en-US', options);
+                const parts = formatter.formatToParts(now);
+                const timezonePart = parts.find(part => part.type === 'timeZoneName');
+                timezoneAbbreviation = timezonePart ? timezonePart.value : 'NYC'; // fallback to nyc
+            } catch (e) {
+                console.error("error determining timezone:", e);
+                timezoneAbbreviation = 'NYC'; // fallback in case of error
+            }
+
+            // combine date, time, and timezone on separate lines
+            let dateTimeDisplay = `${formattedDate}<br>${formattedTime}<br>${timezoneAbbreviation}`;
+
+            // update the content of the div
+            document.getElementById('datetime-nyc').innerHTML = dateTimeDisplay;
+        };
+
+        // function to save settings to firestore
+        async function saveSettings() {
+            if (!userId) {
+                console.warn("user not authenticated, cannot save settings.");
+                return;
+            }
+            try {
+                const settingsRef = doc(db, `artifacts/${appId}/users/${userId}/settings/timeAndTheme`);
+                await setDoc(settingsRef, {
+                    useDDMMYYYY: window.useDDMMYYYY,
+                    useMilitaryTime: window.useMilitaryTime,
+                    isDarkMode: window.isDarkMode
+                });
+                console.log("settings saved successfully!");
+            } catch (e) {
+                console.error("error saving settings:", e);
+            }
+        }
+
+        // function to load settings from firestore
+        async function loadSettings() {
+            if (!userId) {
+                console.warn("user not authenticated, cannot load settings.");
+                return;
+            }
+            try {
+                const settingsRef = doc(db, `artifacts/${appId}/users/${userId}/settings/timeAndTheme`);
+                const docSnap = await getDoc(settingsRef);
+
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    window.useDDMMYYYY = data.useDDMMYYYY || false;
+                    window.useMilitaryTime = data.useMilitaryTime || false;
+                    window.isDarkMode = data.isDarkMode || false;
+                    console.log("settings loaded successfully:", data);
+                } else {
+                    console.log("no saved settings found, using default.");
+                    window.useDDMMYYYY = false;
+                    window.useMilitaryTime = false;
+                    window.isDarkMode = false;
+                }
+                // update ui based on loaded settings
+                document.getElementById('format-ddmmyyyy').classList.toggle('active', window.useDDMMYYYY);
+                document.getElementById('format-military').classList.toggle('active', window.useMilitaryTime);
+                document.getElementById('toggle-dark-mode').classList.toggle('active', window.isDarkMode);
+                document.body.classList.toggle('dark-mode', window.isDarkMode);
+                window.updateDateTime(); // update the display
+            } catch (e) {
+                console.error("error loading settings:", e);
+            }
+        }
+
+        // authenticate user and then load settings
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                userId = user.uid;
+                console.log("authenticated with uid:", userId);
+                await loadSettings();
+            } else {
+                console.log("no user signed in, attempting anonymous sign-in or custom token.");
+                if (typeof __initial_auth_token !== 'undefined') {
+                    try {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } catch (error) {
+                        console.error("error signing in with custom token:", error);
+                        await signInAnonymously(auth); // fallback to anonymous
+                    }
+                } else {
+                    await signInAnonymously(auth);
+                }
+            }
+        });
+
+        // --- event listeners for settings toggle (bottom right) ---
+        const toggleSettingsButton = document.getElementById('toggle-settings');
+        const settingsPanel = document.getElementById('settings-panel');
+
+        toggleSettingsButton.addEventListener('click', () => {
+            settingsPanel.classList.toggle('show');
+        });
+
+        // --- event listeners for contact info toggle (bottom left) ---
+        const toggleContactInfoButton = document.getElementById('toggle-contact-info');
+        const contactInfoPanel = document.getElementById('contact-info-panel');
+
+        toggleContactInfoButton.addEventListener('click', () => {
+            contactInfoPanel.classList.toggle('show');
+        });
+
+        // --- event listeners for format options ---
+        const formatDDMMYYYY = document.getElementById('format-ddmmyyyy');
+        const formatMilitary = document.getElementById('format-military');
+        const toggleDarkMode = document.getElementById('toggle-dark-mode');
+
+        formatDDMMYYYY.addEventListener('click', () => {
+            window.useDDMMYYYY = !window.useDDMMYYYY;
+            formatDDMMYYYY.classList.toggle('active', window.useDDMMYYYY);
+            window.updateDateTime();
+            saveSettings();
+        });
+
+        formatMilitary.addEventListener('click', () => {
+            window.useMilitaryTime = !window.useMilitaryTime;
+            formatMilitary.classList.toggle('active', window.useMilitaryTime);
+            window.updateDateTime();
+            saveSettings();
+        });
+
+        toggleDarkMode.addEventListener('click', () => {
+            window.isDarkMode = !window.isDarkMode;
+            document.body.classList.toggle('dark-mode', window.isDarkMode);
+            toggleDarkMode.classList.toggle('active', window.isDarkMode);
+            saveSettings();
+        });
+
+        // set interval for continuous time update
+        setInterval(window.updateDateTime, 1000);
+
+        // javascript for copying email and phone number in contact info section
+        document.addEventListener('DOMContentLoaded', () => {
+            const contactEmailText = document.getElementById('contact-email-text');
+            const contactPhoneText = document.getElementById('contact-phone-text'); // get phone number element
+            const contactInfoPanelElement = document.getElementById('contact-info-panel'); // get the panel
+
+            // function to handle copying and showing feedback
+            const handleCopy = (elementToCopy, targetElementForFeedback) => {
+                const textToCopy = elementToCopy.textContent;
+                const tempInput = document.createElement('textarea');
+                tempInput.value = textToCopy;
+                document.body.appendChild(tempInput);
+                tempInput.select();
+                document.execCommand('copy');
+                document.body.removeChild(tempInput);
+
+                // create and display the "copied!" message dynamically
+                const copyFeedbackSpan = document.createElement('span');
+                copyFeedbackSpan.textContent = "Copied!";
+                copyFeedbackSpan.classList.add('copy-message', 'show');
+
+                // insert the message before the target element
+                contactInfoPanelElement.insertBefore(copyFeedbackSpan, targetElementForFeedback);
+
+                setTimeout(() => {
+                    copyFeedbackSpan.remove(); // remove the element from the dom
+                }, 1500);
+            };
+
+            if (contactEmailText && contactInfoPanelElement) {
+                contactEmailText.addEventListener('click', () => {
+                    handleCopy(contactEmailText, contactEmailText); // pass email element as target
+                });
+            }
+
+            if (contactPhoneText && contactInfoPanelElement) {
+                contactPhoneText.addEventListener('click', () => {
+                    handleCopy(contactPhoneText, contactPhoneText); // pass phone element as target
+                });
+            }
+        });
+    </script>
+</body>
+</html>
