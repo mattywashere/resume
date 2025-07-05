@@ -104,16 +104,6 @@
             margin-bottom: 0;
         }
         
-        .setting-item label {
-            font-size: 12px;
-            cursor: pointer;
-        }
-        
-        .setting-item input[type="checkbox"] {
-            margin: 0;
-            cursor: pointer;
-        }
-        
         .setting-item button {
             background: none;
             border: none;
@@ -144,12 +134,10 @@
     <div class="settings-container">
         <div class="settings-dropdown" id="settingsDropdown">
             <div class="setting-item">
-                <input type="checkbox" id="ddmmToggle">
-                <label for="ddmmToggle">dd/mm/yyyy</label>
+                <button id="ddmmToggle">mm/dd/yyyy</button>
             </div>
             <div class="setting-item">
-                <input type="checkbox" id="hour24Toggle">
-                <label for="hour24Toggle">24hr clock</label>
+                <button id="hour24Toggle">12hr clock</button>
             </div>
             <div class="setting-item">
                 <button id="themeToggle">
@@ -165,8 +153,8 @@
             const now = new Date();
             
             // Get settings
-            const useDDMM = document.getElementById('ddmmToggle').checked;
-            const use24Hr = document.getElementById('hour24Toggle').checked;
+            const useDDMM = localStorage.getItem('useDDMM') === 'true';
+            const use24Hr = localStorage.getItem('use24Hr') === 'true';
             
             let dateStr, timeStr;
             
@@ -249,8 +237,34 @@
             const savedDDMM = localStorage.getItem('useDDMM') === 'true';
             const saved24Hr = localStorage.getItem('use24Hr') === 'true';
             
-            document.getElementById('ddmmToggle').checked = savedDDMM;
-            document.getElementById('hour24Toggle').checked = saved24Hr;
+            updateDateToggleText(savedDDMM);
+            updateTimeToggleText(saved24Hr);
+        }
+        
+        function updateDateToggleText(useDDMM) {
+            const toggleBtn = document.getElementById('ddmmToggle');
+            toggleBtn.textContent = useDDMM ? 'dd/mm/yyyy' : 'mm/dd/yyyy';
+        }
+        
+        function updateTimeToggleText(use24Hr) {
+            const toggleBtn = document.getElementById('hour24Toggle');
+            toggleBtn.textContent = use24Hr ? '24hr clock' : '12hr clock';
+        }
+        
+        function toggleDateFormat() {
+            const currentUseDDMM = localStorage.getItem('useDDMM') === 'true';
+            const newUseDDMM = !currentUseDDMM;
+            localStorage.setItem('useDDMM', newUseDDMM);
+            updateDateToggleText(newUseDDMM);
+            updateDateTime();
+        }
+        
+        function toggleTimeFormat() {
+            const currentUse24Hr = localStorage.getItem('use24Hr') === 'true';
+            const newUse24Hr = !currentUse24Hr;
+            localStorage.setItem('use24Hr', newUse24Hr);
+            updateTimeToggleText(newUse24Hr);
+            updateDateTime();
         }
         
         function toggleSettings() {
@@ -273,17 +287,8 @@
         // Add event listeners
         document.getElementById('settingsTrigger').addEventListener('click', toggleSettings);
         document.addEventListener('click', closeSettings);
-        
-        // Save settings when changed
-        document.getElementById('ddmmToggle').addEventListener('change', (e) => {
-            localStorage.setItem('useDDMM', e.target.checked);
-            updateDateTime();
-        });
-        
-        document.getElementById('hour24Toggle').addEventListener('change', (e) => {
-            localStorage.setItem('use24Hr', e.target.checked);
-            updateDateTime();
-        });
+        document.getElementById('ddmmToggle').addEventListener('click', toggleDateFormat);
+        document.getElementById('hour24Toggle').addEventListener('click', toggleTimeFormat);
         
         // Listen for system theme changes
         window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
@@ -293,6 +298,9 @@
                 updateToggleText(theme);
             }
         });
+        
+        // Add event listeners for theme toggle
+        document.getElementById('themeToggle').addEventListener('click', toggleTheme);
         
         // Update immediately
         updateDateTime();
