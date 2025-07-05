@@ -54,13 +54,19 @@
         }
         
         .center-image:hover {
-            opacity: var(--hover-opacity);
+            opacity: 1;
         }
         
-        .theme-toggle {
+        .settings-container {
             position: absolute;
             bottom: 20px;
             right: 20px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 14px;
+            color: var(--text-color);
+        }
+        
+        .settings-trigger {
             background: none;
             border: none;
             color: var(--text-color);
@@ -69,6 +75,53 @@
             padding: 0;
             cursor: pointer;
             user-select: none;
+        }
+        
+        .settings-dropdown {
+            position: absolute;
+            bottom: 100%;
+            right: 0;
+            background-color: var(--bg-color);
+            border: 1px solid var(--text-color);
+            padding: 10px;
+            margin-bottom: 5px;
+            display: none;
+            min-width: 150px;
+        }
+        
+        .settings-dropdown.open {
+            display: block;
+        }
+        
+        .setting-item {
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .setting-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .setting-item label {
+            font-size: 12px;
+            cursor: pointer;
+        }
+        
+        .setting-item input[type="checkbox"] {
+            margin: 0;
+            cursor: pointer;
+        }
+        
+        .setting-item button {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 12px;
+            cursor: pointer;
+            padding: 0;
         }
     </style>
 </head>
@@ -88,31 +141,63 @@
         <img src="resume.png" alt="Center Image" class="center-image" id="centerImage">
     </a>
     
-    <button class="theme-toggle" id="themeToggle">
-        <span id="toggleText">dark</span>
-    </button>
+    <div class="settings-container">
+        <div class="settings-dropdown" id="settingsDropdown">
+            <div class="setting-item">
+                <input type="checkbox" id="ddmmToggle">
+                <label for="ddmmToggle">dd/mm/yyyy</label>
+            </div>
+            <div class="setting-item">
+                <input type="checkbox" id="hour24Toggle">
+                <label for="hour24Toggle">24hr clock</label>
+            </div>
+            <div class="setting-item">
+                <button id="themeToggle">
+                    <span id="toggleText">dark</span>
+                </button>
+            </div>
+        </div>
+        <button class="settings-trigger" id="settingsTrigger">settings</button>
+    </div>
     
     <script>
         function updateDateTime() {
             const now = new Date();
             
-            const dateOptions = { 
-                year: 'numeric', 
-                month: '2-digit', 
-                day: '2-digit' 
-            };
-            const timeOptions = { 
-                hour: '2-digit', 
-                minute: '2-digit', 
-                second: '2-digit',
-                hour12: true
-            };
+            // Get settings
+            const useDDMM = document.getElementById('ddmmToggle').checked;
+            const use24Hr = document.getElementById('hour24Toggle').checked;
             
-            const dateStr = now.toLocaleDateString('en-US', dateOptions).replace(/\//g, '/');
-            const timeStr = now.toLocaleTimeString('en-US', timeOptions);
+            let dateStr, timeStr;
             
-            // Extract time and AM/PM
-            const [time, ampm] = timeStr.split(' ');
+            if (useDDMM) {
+                const day = String(now.getDate()).padStart(2, '0');
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const year = now.getFullYear();
+                dateStr = `${day}/${month}/${year}`;
+            } else {
+                const dateOptions = { 
+                    year: 'numeric', 
+                    month: '2-digit', 
+                    day: '2-digit' 
+                };
+                dateStr = now.toLocaleDateString('en-US', dateOptions);
+            }
+            
+            if (use24Hr) {
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                const seconds = String(now.getSeconds()).padStart(2, '0');
+                timeStr = `${hours}:${minutes}:${seconds}`;
+            } else {
+                const timeOptions = { 
+                    hour: '2-digit', 
+                    minute: '2-digit', 
+                    second: '2-digit',
+                    hour12: true
+                };
+                timeStr = now.toLocaleTimeString('en-US', timeOptions);
+            }
             
             // Determine if we're in daylight saving time for Eastern timezone
             const january = new Date(now.getFullYear(), 0, 1);
@@ -124,7 +209,7 @@
             const timezoneStr = isDST ? 'EDT' : 'EST';
             
             document.getElementById('date').textContent = dateStr;
-            document.getElementById('time').textContent = time + ' ' + ampm;
+            document.getElementById('time').textContent = timeStr;
             document.getElementById('timezone').textContent = timezoneStr;
         }
         
@@ -159,8 +244,46 @@
         // Initialize theme on page load
         initializeTheme();
         
-        // Add event listener for theme toggle
-        document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+        // Settings functionality
+        function initializeSettings() {
+            const savedDDMM = localStorage.getItem('useDDMM') === 'true';
+            const saved24Hr = localStorage.getItem('use24Hr') === 'true';
+            
+            document.getElementById('ddmmToggle').checked = savedDDMM;
+            document.getElementById('hour24Toggle').checked = saved24Hr;
+        }
+        
+        function toggleSettings() {
+            const dropdown = document.getElementById('settingsDropdown');
+            dropdown.classList.toggle('open');
+        }
+        
+        function closeSettings(event) {
+            const dropdown = document.getElementById('settingsDropdown');
+            const trigger = document.getElementById('settingsTrigger');
+            
+            if (!dropdown.contains(event.target) && !trigger.contains(event.target)) {
+                dropdown.classList.remove('open');
+            }
+        }
+        
+        // Initialize settings on page load
+        initializeSettings();
+        
+        // Add event listeners
+        document.getElementById('settingsTrigger').addEventListener('click', toggleSettings);
+        document.addEventListener('click', closeSettings);
+        
+        // Save settings when changed
+        document.getElementById('ddmmToggle').addEventListener('change', (e) => {
+            localStorage.setItem('useDDMM', e.target.checked);
+            updateDateTime();
+        });
+        
+        document.getElementById('hour24Toggle').addEventListener('change', (e) => {
+            localStorage.setItem('use24Hr', e.target.checked);
+            updateDateTime();
+        });
         
         // Listen for system theme changes
         window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
