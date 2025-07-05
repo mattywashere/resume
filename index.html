@@ -5,12 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Matthew Lubin</title>
     <style>
+        :root {
+            --bg-color: white;
+            --text-color: black;
+            --hover-opacity: 0.8;
+        }
+        
+        [data-theme="dark"] {
+            --bg-color: #0a0a0a;
+            --text-color: #e0e0e0;
+            --hover-opacity: 0.7;
+        }
+        
         body {
             margin: 0;
             padding: 20px;
-            background-color: white;
+            background-color: var(--bg-color);
             font-family: 'Courier New', Courier, monospace;
-            color: black;
+            color: var(--text-color);
         }
         
         .name {
@@ -19,6 +31,7 @@
             left: 20px;
             font-size: 16px;
             line-height: 1.2;
+            text-align: center;
         }
         
         .datetime {
@@ -38,18 +51,31 @@
             max-width: 100%;
             max-height: 100%;
             cursor: pointer;
-            transition: opacity 0.3s ease;
         }
         
         .center-image:hover {
-            opacity: 0.8;
+            opacity: var(--hover-opacity);
+        }
+        
+        .theme-toggle {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: var(--text-color);
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 14px;
+            padding: 0;
+            cursor: pointer;
+            user-select: none;
         }
     </style>
 </head>
 <body>
     <div class="name">
-        MATTHEW<br>
-        LUBIN
+        matthew<br>
+        lubin
     </div>
     
     <div class="datetime" id="datetime">
@@ -61,6 +87,10 @@
     <a href="resume.pdf" download="Matthew_Lubin_Resume.pdf">
         <img src="resume.png" alt="Center Image" class="center-image" id="centerImage">
     </a>
+    
+    <button class="theme-toggle" id="themeToggle">
+        <span id="toggleText">dark</span>
+    </button>
     
     <script>
         function updateDateTime() {
@@ -97,6 +127,49 @@
             document.getElementById('time').textContent = time + ' ' + ampm;
             document.getElementById('timezone').textContent = timezoneStr;
         }
+        
+        // Theme toggle functionality
+        function initializeTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            
+            if (savedTheme) {
+                document.documentElement.setAttribute('data-theme', savedTheme);
+                updateToggleText(savedTheme);
+            } else if (systemPrefersDark) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                updateToggleText('dark');
+            }
+        }
+        
+        function updateToggleText(theme) {
+            const toggleText = document.getElementById('toggleText');
+            toggleText.textContent = theme === 'dark' ? 'light' : 'dark';
+        }
+        
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateToggleText(newTheme);
+        }
+        
+        // Initialize theme on page load
+        initializeTheme();
+        
+        // Add event listener for theme toggle
+        document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+        
+        // Listen for system theme changes
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+            if (!localStorage.getItem('theme')) {
+                const theme = e.matches ? 'dark' : 'light';
+                document.documentElement.setAttribute('data-theme', theme);
+                updateToggleText(theme);
+            }
+        });
         
         // Update immediately
         updateDateTime();
