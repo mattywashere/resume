@@ -11,11 +11,7 @@
             --hover-opacity: 0.8;
         }
         
-        [data-theme="dark"] {
-            --bg-color: #0a0a0a;
-            --text-color: #e0e0e0;
-            --hover-opacity: 0.7;
-        }
+        /* Removed dark theme styles as the page will always be light */
         
         body {
             margin: 0;
@@ -56,63 +52,6 @@
         .center-image:hover {
             opacity: 1;
         }
-        
-        .settings-container {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 14px;
-            color: var(--text-color);
-        }
-        
-        .settings-trigger {
-            background: none;
-            border: none;
-            color: var(--text-color);
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 14px;
-            padding: 0;
-            cursor: pointer;
-            user-select: none;
-        }
-        
-        .settings-dropdown {
-            position: absolute;
-            bottom: 100%;
-            right: 0;
-            background-color: var(--bg-color);
-            border: 1px solid var(--text-color);
-            padding: 10px;
-            margin-bottom: 5px;
-            display: none;
-            min-width: 150px;
-        }
-        
-        .settings-dropdown.open {
-            display: block;
-        }
-        
-        .setting-item {
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .setting-item:last-child {
-            margin-bottom: 0;
-        }
-        
-        .setting-item button {
-            background: none;
-            border: none;
-            color: var(--text-color);
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 12px;
-            cursor: pointer;
-            padding: 0;
-        }
     </style>
 </head>
 <body>
@@ -131,30 +70,13 @@
         <img src="resume.png" alt="Center Image" class="center-image" id="centerImage">
     </a>
     
-    <div class="settings-container">
-        <div class="settings-dropdown" id="settingsDropdown">
-            <div class="setting-item">
-                <button id="ddmmToggle">mm/dd/yyyy</button>
-            </div>
-            <div class="setting-item">
-                <button id="hour24Toggle">12hr clock</button>
-            </div>
-            <div class="setting-item">
-                <button id="themeToggle">
-                    <span id="toggleText">dark</span>
-                </button>
-            </div>
-        </div>
-        <button class="settings-trigger" id="settingsTrigger">settings</button>
-    </div>
-    
     <script>
         function updateDateTime() {
             const now = new Date();
             
-            // Get settings
-            const useDDMM = localStorage.getItem('useDDMM') === 'true';
-            const use24Hr = localStorage.getItem('use24Hr') === 'true';
+            // Default settings (no user customization)
+            const useDDMM = false; // Always mm/dd/yyyy
+            const use24Hr = false; // Always 12hr clock
             
             let dateStr, timeStr;
             
@@ -201,106 +123,16 @@
             document.getElementById('timezone').textContent = timezoneStr;
         }
         
-        // Theme toggle functionality
+        // Force light theme on page load
         function initializeTheme() {
-            const savedTheme = localStorage.getItem('theme');
-            const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            
-            if (savedTheme) {
-                document.documentElement.setAttribute('data-theme', savedTheme);
-                updateToggleText(savedTheme);
-            } else if (systemPrefersDark) {
-                document.documentElement.setAttribute('data-theme', 'dark');
-                updateToggleText('dark');
-            }
-        }
-        
-        function updateToggleText(theme) {
-            const toggleText = document.getElementById('toggleText');
-            toggleText.textContent = theme === 'dark' ? 'light' : 'dark';
-        }
-        
-        function toggleTheme() {
-            const currentTheme = document.documentElement.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            
-            document.documentElement.setAttribute('data-theme', newTheme);
-            localStorage.setItem('theme', newTheme);
-            updateToggleText(newTheme);
+            document.documentElement.setAttribute('data-theme', 'light');
+            localStorage.setItem('theme', 'light'); // Persist the light theme
         }
         
         // Initialize theme on page load
         initializeTheme();
         
-        // Settings functionality
-        function initializeSettings() {
-            const savedDDMM = localStorage.getItem('useDDMM') === 'true';
-            const saved24Hr = localStorage.getItem('use24Hr') === 'true';
-            
-            updateDateToggleText(savedDDMM);
-            updateTimeToggleText(saved24Hr);
-        }
-        
-        function updateDateToggleText(useDDMM) {
-            const toggleBtn = document.getElementById('ddmmToggle');
-            toggleBtn.textContent = useDDMM ? 'dd/mm/yyyy' : 'mm/dd/yyyy';
-        }
-        
-        function updateTimeToggleText(use24Hr) {
-            const toggleBtn = document.getElementById('hour24Toggle');
-            toggleBtn.textContent = use24Hr ? '24hr clock' : '12hr clock';
-        }
-        
-        function toggleDateFormat() {
-            const currentUseDDMM = localStorage.getItem('useDDMM') === 'true';
-            const newUseDDMM = !currentUseDDMM;
-            localStorage.setItem('useDDMM', newUseDDMM);
-            updateDateToggleText(newUseDDMM);
-            updateDateTime();
-        }
-        
-        function toggleTimeFormat() {
-            const currentUse24Hr = localStorage.getItem('use24Hr') === 'true';
-            const newUse24Hr = !currentUse24Hr;
-            localStorage.setItem('use24Hr', newUse24Hr);
-            updateTimeToggleText(newUse24Hr);
-            updateDateTime();
-        }
-        
-        function toggleSettings() {
-            const dropdown = document.getElementById('settingsDropdown');
-            dropdown.classList.toggle('open');
-        }
-        
-        function closeSettings(event) {
-            const dropdown = document.getElementById('settingsDropdown');
-            const trigger = document.getElementById('settingsTrigger');
-            
-            if (!dropdown.contains(event.target) && !trigger.contains(event.target)) {
-                dropdown.classList.remove('open');
-            }
-        }
-        
-        // Initialize settings on page load
-        initializeSettings();
-        
-        // Add event listeners
-        document.getElementById('settingsTrigger').addEventListener('click', toggleSettings);
-        document.addEventListener('click', closeSettings);
-        document.getElementById('ddmmToggle').addEventListener('click', toggleDateFormat);
-        document.getElementById('hour24Toggle').addEventListener('click', toggleTimeFormat);
-        
-        // Listen for system theme changes
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-            if (!localStorage.getItem('theme')) {
-                const theme = e.matches ? 'dark' : 'light';
-                document.documentElement.setAttribute('data-theme', theme);
-                updateToggleText(theme);
-            }
-        });
-        
-        // Add event listeners for theme toggle
-        document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+        // No longer listening for system theme changes as it's forced to light
         
         // Update immediately
         updateDateTime();
