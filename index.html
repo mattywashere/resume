@@ -37,6 +37,12 @@
             transform: translate(-50%, -50%);
             max-width: 90%;
             max-height: 90%;
+            cursor: pointer;
+            transition: opacity 0.3s ease;
+        }
+        
+        .center-image:hover {
+            opacity: 0.8;
         }
     </style>
 </head>
@@ -52,9 +58,9 @@
         <div id="timezone"></div>
     </div>
     
-    <a href="resume.pdf" download="resume.pdf">
-    <img src="resume.png" alt="Center Image" class="center-image" id="centerImage">
-</a>
+    <a href="resume.pdf" download="Matthew_Lubin_Resume.pdf">
+        <img src="resume.png" alt="Center Image" class="center-image" id="centerImage">
+    </a>
     
     <script>
         function updateDateTime() {
