@@ -84,28 +84,27 @@
     </a>
     
     <div class="last-updated">
-        last updated: <span id="last-updated-date">6 july 2025</span><br>
-        * added <span class="highlight" id="last-updated-repo">CompTIA A+</span>
+        * added <span class="highlight">CompTIA A+</span>
     </div>
     
     <script>
         function updateDateTime() {
             const now = new Date();
             
-            // Format date as "6 july 2025"
+            // Format date as "6th July 2025"
             const day = now.getDate();
-            const month = now.toLocaleDateString('en-US', { month: 'long' }).toLowerCase();
+            const ordinal = getOrdinalSuffix(day);
+            const month = now.toLocaleDateString('en-US', { month: 'long' });
             const year = now.getFullYear();
-            const dateStr = `${day} ${month} ${year}`;
+            const dateStr = `${day}${ordinal} ${month} ${year}`;
             
-            // Format time in 12-hour format
+            // Format time in 12-hour format without seconds
             const timeOptions = { 
-                hour: '2-digit', 
-                minute: '2-digit', 
-                second: '2-digit',
+                hour: 'numeric', 
+                minute: '2-digit',
                 hour12: true
             };
-            const timeStr = now.toLocaleTimeString('en-US', timeOptions).toLowerCase();
+            const timeStr = now.toLocaleTimeString('en-US', timeOptions);
             
             // Determine if we're in daylight saving time for Eastern timezone
             const january = new Date(now.getFullYear(), 0, 1);
@@ -113,39 +112,21 @@
             const stdTimezoneOffset = Math.max(january.getTimezoneOffset(), july.getTimezoneOffset());
             const isDST = now.getTimezoneOffset() < stdTimezoneOffset;
             
-            // Get timezone abbreviation for Eastern time (lowercase)
-            const timezoneStr = isDST ? 'edt' : 'est';
+            // Get timezone abbreviation for Eastern time
+            const timezoneStr = isDST ? 'EDT' : 'EST';
             
             document.getElementById('date').textContent = dateStr;
             document.getElementById('time').textContent = timeStr;
             document.getElementById('timezone').textContent = timezoneStr;
         }
         
-        async function updateLastUpdated() {
-            try {
-                const response = await fetch('https://api.github.com/users/mattywashere/repos?sort=updated&per_page=1');
-                const repos = await response.json();
-                
-                if (repos.length > 0) {
-                    const lastUpdated = new Date(repos[0].updated_at);
-                    const day = lastUpdated.getDate();
-                    const month = lastUpdated.toLocaleDateString('en-US', { month: 'long' }).toLowerCase();
-                    const year = lastUpdated.getFullYear();
-                    const dateStr = `${day} ${month} ${year}`;
-                    
-                    document.getElementById('last-updated-date').textContent = dateStr;
-                    document.getElementById('last-updated-repo').textContent = repos[0].name;
-                }
-            } catch (error) {
-                console.error('Error fetching GitHub data:', error);
-                // Fallback to current date if API fails
-                const now = new Date();
-                const day = now.getDate();
-                const month = now.toLocaleDateString('en-US', { month: 'long' }).toLowerCase();
-                const year = now.getFullYear();
-                const dateStr = `${day} ${month} ${year}`;
-                document.getElementById('last-updated-date').textContent = dateStr;
-                document.getElementById('last-updated-repo').textContent = 'CompTIA A+';
+        function getOrdinalSuffix(day) {
+            if (day > 3 && day < 21) return 'th';
+            switch (day % 10) {
+                case 1: return 'st';
+                case 2: return 'nd';
+                case 3: return 'rd';
+                default: return 'th';
             }
         }
         
@@ -162,13 +143,9 @@
         
         // Update immediately
         updateDateTime();
-        updateLastUpdated();
         
         // Update every second
         setInterval(updateDateTime, 1000);
-        
-        // Update GitHub info every 5 minutes
-        setInterval(updateLastUpdated, 300000);
     </script>
 </body>
 </html>
