@@ -41,6 +41,28 @@
             text-align: center;
         }
         
+        .message-button {
+            display: block; 
+            margin-top: 5px; 
+            font-size: 14px; 
+            color: var(--text-color);
+            text-decoration: none;
+            border: 1px solid var(--border-color);
+            padding: 3px 6px;
+            text-align: center;
+            box-sizing: border-box;
+            width: max-content; 
+        }
+
+        .message-button:hover {
+            background-color: var(--hover-bg-color);
+            color: var(--hover-text-color);
+        }
+
+        .mobile-only {
+            display: none; 
+        }
+
         .datetime {
             position: absolute;
             top: 20px;
@@ -55,11 +77,10 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            /* Adjusted to give more space by reducing the fixed margin around the image */
-            width: calc(100% - 40px); /* Was 80px, now 20px padding on each side */
-            height: calc(100% - 40px); /* Was 80px, now 20px padding on top/bottom */
-            max-width: 800px; /* Kept max width */
-            max-height: 1100px; /* Kept max height */
+            width: calc(100% - 40px); 
+            height: calc(100% - 40px); 
+            max-width: 800px; 
+            max-height: 1100px; 
             display: flex;
             justify-content: center;
             align-items: center;
@@ -94,8 +115,7 @@
         .download-options a {
             color: var(--text-color);
             text-decoration: none;
-            /* Reduced padding for smaller buttons */
-            padding: 3px 6px; /* Was 5px 8px */
+            padding: 3px 6px; 
             border: 1px solid var(--border-color);
             display: inline-block;
             box-sizing: border-box;
@@ -115,8 +135,7 @@
             background-color: var(--bg-color); 
             color: var(--text-color); 
             border: 1px solid var(--border-color);
-            /* Reduced padding for smaller button */
-            padding: 6px 10px; /* Was 8px 12px */
+            padding: 6px 10px; 
             font-size: 14px;
             font-family: 'Courier New', Courier, monospace;
             cursor: pointer;
@@ -126,12 +145,49 @@
             background-color: var(--hover-bg-color);
             color: var(--hover-text-color);
         }
+
+        @media (max-width: 768px) { 
+            .desktop-only {
+                display: none;
+            }
+
+            .mobile-only {
+                display: block; 
+                position: fixed; 
+                bottom: 20px; 
+                left: 50%; 
+                transform: translateX(-50%); 
+                z-index: 1000; 
+                
+                font-size: 16px; 
+                padding: 8px 15px; 
+                background-color: var(--bg-color); 
+                color: var(--text-color);
+                border: 1px solid var(--border-color);
+                min-width: 150px; 
+                text-decoration: none; 
+                cursor: pointer; 
+                font-family: 'Courier New', Courier, monospace; 
+                box-shadow: 0 2px 5px rgba(0,0,0,0.2); 
+            }
+
+            .mobile-only:hover {
+                background-color: var(--hover-bg-color);
+                color: var(--hover-text-color);
+            }
+
+            .download-options {
+                bottom: 60px; 
+                right: 20px; 
+            }
+        }
     </style>
 </head>
 <body>
     <div class="name">
         matthew<br>
-        lubin
+        lubin<br>
+        <a href="mailto:matt.lubin@outlook.com" class="message-button desktop-only">send<br>email</a>
     </div>
     
     <div class="datetime" id="datetime">
@@ -158,6 +214,8 @@
 
     <button id="themeToggleButton" class="theme-toggle-button">Toggle Theme</button>
 
+    <a href="mailto:matt.lubin@outlook.com" class="message-button mobile-only">send<br>email</a>
+
     <script>
         function updateDateTime() {
             const now = new Date();
@@ -175,12 +233,12 @@
             };
             const timeStr = now.toLocaleTimeString('en-US', timeOptions);
             
-            const january = new Date(now.getFullYear(), 0, 1);
-            const july = new Date(now.getFullYear(), 6, 1);
-            const stdTimezoneOffset = Math.max(january.getTimezoneOffset(), july.getTimezoneOffset());
-            const isDST = now.getTimezoneOffset() < stdTimezoneOffset;
-            
-            const timezoneStr = isDST ? 'EDT' : 'EST'; 
+            const formatter = new Intl.DateTimeFormat('en-US', {
+                timeZoneName: 'short'
+            });
+            const parts = formatter.formatToParts(now);
+            const timezonePart = parts.find(part => part.type === 'timeZoneName');
+            const timezoneStr = timezonePart ? timezonePart.value : '';
             
             document.getElementById('date').textContent = dateStr;
             document.getElementById('time').textContent = timeStr;
