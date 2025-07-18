@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>matthew lubin</title>
     <style>
         :root {
@@ -25,8 +25,9 @@
             margin: 0;
             padding: 20px;
             background-color: var(--bg-color);
-            font-family: 'courier new', courier, monospace;
+            font-family: 'Courier New', Courier, monospace;
             color: var(--text-color);
+            overflow: hidden;
         }
 
         .name {
@@ -102,50 +103,41 @@
             color: var(--hover-text-color);
         }
 
-        .theme-toggle-button {
-            position: absolute;
-            bottom: 60px;
-            left: 20px;
+        .theme-toggle-button,
+        .email-button {
             background-color: var(--bg-color);
             color: var(--text-color);
             border: 1px solid var(--border-color);
             padding: 6px 10px;
             font-size: 14px;
-            font-family: 'courier new', courier, monospace;
+            font-family: 'Courier New', Courier, monospace;
             cursor: pointer;
         }
 
-        .theme-toggle-button:hover {
+        .theme-toggle-button:hover,
+        .email-button:hover {
             background-color: var(--hover-bg-color);
             color: var(--hover-text-color);
+        }
+
+        .theme-toggle-button {
+            position: absolute;
+            bottom: 60px;
+            left: 20px;
         }
 
         .email-button {
             position: absolute;
             bottom: 20px;
             left: 20px;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            border: 1px solid var(--border-color);
-            padding: 6px 10px;
-            font-size: 14px;
-            font-family: 'courier new', courier, monospace;
             text-decoration: none;
-            text-align: center;
             display: inline-block;
-            cursor: pointer;
-        }
-
-        .email-button:hover {
-            background-color: var(--hover-bg-color);
-            color: var(--hover-text-color);
         }
     </style>
 </head>
 <body>
     <div class="name">
-        matthew<br>
-        lubin
+        matthew<br>lubin
     </div>
 
     <div class="datetime" id="datetime">
@@ -155,9 +147,9 @@
     </div>
 
     <div class="center-image-container">
-        <a href="files/resume.pdf" target="_blank" rel="noopener noreferrer">
-            <picture>
-                <img src="files/resume.png" alt="resume preview" class="center-image" loading="lazy">
+        <a href="files/resume.pdf" download="matthew_lubin_resume.pdf">
+            <picture id="resumeImagePicture">
+                <img src="files/resume.png" alt="resume preview" class="center-image" id="centerImage">
             </picture>
         </a>
     </div>
@@ -170,78 +162,80 @@
         </div>
     </div>
 
-    <button id="themeToggleButton" class="theme-toggle-button">toggle theme</button>
-    <a href="mailto:matt.lubin@outlook.com" class="email-button">send email</a>
+    <button id="themeToggleButton" class="theme-toggle-button">dark mode</button>
+    <a href="mailto:lubin.matthew@gmail.com" class="email-button">send email</a>
 
     <script>
         function updateDateTime() {
-            const now = new Date()
-            const day = now.getDate()
-            const ordinal = getOrdinalSuffix(day)
-            const month = now.toLocaleDateString(undefined, { month: 'long' })
-            const year = now.getFullYear()
-            const dateStr = `${day}${ordinal} ${month} ${year}`
+            const now = new Date();
 
-            const timeStr = now.toLocaleTimeString(undefined, {
-                hour: 'numeric',
+            const day = now.getDate();
+            const ordinal = getOrdinalSuffix(day);
+            const month = now.toLocaleDateString('en-US', { month: 'long' });
+            const year = now.getFullYear();
+            const dateStr = `${day}${ordinal} ${month} ${year}`;
+
+            const timeStr = now.toLocaleTimeString('en-US', {
+                hour: '2-digit',
                 minute: '2-digit',
-                hour12: true
-            })
+                second: '2-digit',
+                hour12: false
+            });
 
-            const timeZoneName = Intl.DateTimeFormat(undefined, { timeZoneName: 'short' })
+            const timeZone = Intl.DateTimeFormat('en-US', { timeZoneName: 'short' })
                 .formatToParts(now)
-                .find(part => part.type === 'timeZoneName')?.value || ''
+                .find(part => part.type === 'timeZoneName')?.value || '';
 
-            document.getElementById('date').textContent = dateStr
-            document.getElementById('time').textContent = timeStr
-            document.getElementById('timezone').textContent = timeZoneName
+            document.getElementById('date').textContent = dateStr;
+            document.getElementById('time').textContent = timeStr;
+            document.getElementById('timezone').textContent = timeZone;
         }
 
         function getOrdinalSuffix(day) {
-            if (day > 3 && day < 21) return 'th'
+            if (day > 3 && day < 21) return 'th';
             switch (day % 10) {
-                case 1: return 'st'
-                case 2: return 'nd'
-                case 3: return 'rd'
-                default: return 'th'
+                case 1: return 'st';
+                case 2: return 'nd';
+                case 3: return 'rd';
+                default: return 'th';
             }
         }
 
-        const themeToggleButton = document.getElementById('themeToggleButton')
-        const body = document.body
+        const themeToggleButton = document.getElementById('themeToggleButton');
+        const body = document.body;
 
         function applyTheme(theme) {
             if (theme === 'dark') {
-                body.classList.add('dark-mode')
-                themeToggleButton.textContent = 'light mode'
+                body.classList.add('dark-mode');
+                themeToggleButton.textContent = 'light mode';
             } else {
-                body.classList.remove('dark-mode')
-                themeToggleButton.textContent = 'dark mode'
+                body.classList.remove('dark-mode');
+                themeToggleButton.textContent = 'dark mode';
             }
         }
 
         function loadTheme() {
-            const savedTheme = localStorage.getItem('theme')
+            const savedTheme = localStorage.getItem('theme');
             if (savedTheme) {
-                applyTheme(savedTheme)
+                applyTheme(savedTheme);
             } else {
-                applyTheme('light')
+                applyTheme('light');
             }
         }
 
         themeToggleButton.addEventListener('click', () => {
             if (body.classList.contains('dark-mode')) {
-                applyTheme('light')
-                localStorage.setItem('theme', 'light')
+                applyTheme('light');
+                localStorage.setItem('theme', 'light');
             } else {
-                applyTheme('dark')
-                localStorage.setItem('theme', 'dark')
+                applyTheme('dark');
+                localStorage.setItem('theme', 'dark');
             }
-        })
+        });
 
-        loadTheme()
-        updateDateTime()
-        setInterval(updateDateTime, 1000)
+        loadTheme();
+        updateDateTime();
+        setInterval(updateDateTime, 1000);
     </script>
 </body>
 </html>
